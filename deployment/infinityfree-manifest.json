@@ -1,0 +1,58 @@
+{
+  "layout": "INFINITYFREE_HTDOCS_PROTECTED",
+  "upload": [
+    ".htaccess",
+    "app/",
+    "bootstrap/",
+    "config/",
+    "public/index.php",
+    "public/.htaccess",
+    "public/assets/",
+    "resources/",
+    "routes/",
+    "storage/.htaccess",
+    "storage/uploads/.htaccess",
+    "storage/logs/.gitkeep",
+    "storage/sessions/.gitkeep",
+    "storage/uploads/.gitkeep",
+    "storage/uploads/documents/.gitkeep",
+    "storage/uploads/documents/.trash/.gitkeep"
+  ],
+  "do_not_upload": [
+    ".env",
+    ".env.example",
+    ".env.infinityfree.example",
+    "database/",
+    "deployment/",
+    "docs/",
+    "evidence/",
+    "scripts/",
+    "tests/",
+    ".git/",
+    ".github/",
+    ".vscode/",
+    ".idea/",
+    "node_modules/",
+    "package.json",
+    "package-lock.json",
+    "tailwind.config.js",
+    "README.md",
+    "TODO.md",
+    "implementation.md",
+    "proceed.md",
+    "storage/logs/*.log",
+    "storage/sessions/sess_*",
+    "storage/uploads/e2e-documents/"
+  ],
+  "operator_configures_manually": [
+    "/htdocs/.env after live dotfile denial verification",
+    "schema initialization through authorized database administration",
+    "production reference seed import through authorized database administration",
+    "runtime writable permissions",
+    "initial Security Admin provisioning"
+  ],
+  "temporary_only": [
+    "deployment/infinityfree-capability-check.php",
+    "deployment/infinityfree-env-denial-probe.txt (upload temporarily as /htdocs/.env, then delete)"
+  ]
+}

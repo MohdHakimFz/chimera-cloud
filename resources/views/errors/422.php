@@ -1,0 +1,1 @@
+<section class="error-page"><p class="section-label">Validation failed</p><h1>422</h1><p>The submitted request could not be accepted.</p><a class="button button-primary" href="<?=e(url('/'))?>">Return home</a></section>

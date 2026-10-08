@@ -1,0 +1,1 @@
+<section class="error-page"><p class="section-label">Method not allowed</p><h1>405</h1><p><?=e($message??'The requested method is not allowed.')?></p><a class="button button-primary" href="<?=e(url('/'))?>">Return home</a></section>

@@ -1,0 +1,1 @@
+<section class="error-page"><p class="section-label">Authentication required</p><h1>401</h1><p>Authentication is required.</p><a class="button button-primary" href="<?=e(url('/login'))?>">Sign in</a></section>

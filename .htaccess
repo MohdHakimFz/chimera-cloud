@@ -1,0 +1,33 @@
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # CHIMERA_INFINITYFREE_PROTECTED_ROOT
+    # Security denials must remain before file/directory and front-controller rules.
+    RewriteRule ^(?:app|bootstrap|config|database|deployment|docs|evidence|resources|routes|scripts|storage|tests|vendor|logs|\.git|\.github|\.vscode|\.idea)(?:/|$) - [F,L,NC]
+    RewriteRule ^(?:README\.md|TODO\.md|implementation\.md|proceed\.md|composer\.(?:json|lock)|phpunit\.xml(?:\.dist)?)$ - [F,L,NC]
+
+    # Deny direct public/ URLs while allowing internal rewrites whose original request is safe.
+    RewriteCond %{THE_REQUEST} "\s/+public(?:[/\s?])" [NC]
+    RewriteRule ^public(?:/|$) - [F,L,NC]
+
+    # The htdocs origin is itself a real directory. Route the empty path
+    # explicitly before the generic !-d guard so / cannot become a 403.
+    RewriteRule ^$ public/index.php [QSA,L]
+
+    # Only allowlisted static asset families/extensions are mapped; no arbitrary path capture.
+    RewriteRule ^assets/css/([A-Za-z0-9][A-Za-z0-9_-]*\.css)$ public/assets/css/$1 [L,NC]
+    RewriteRule ^assets/js/([A-Za-z0-9][A-Za-z0-9_-]*\.js)$ public/assets/js/$1 [L,NC]
+    RewriteRule ^assets/images/([A-Za-z0-9][A-Za-z0-9_-]*\.(?:avif|gif|ico|jpe?g|png|svg|webp))$ public/assets/images/$1 [L,NC]
+    RewriteRule ^assets/fonts/([A-Za-z0-9][A-Za-z0-9_-]*\.woff2)$ public/assets/fonts/$1 [L,NC]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ public/index.php [QSA,L]
+</IfModule>
+
+<FilesMatch "(?i)^(?:\.|.*\.(?:env|ini|log|sql|bak|backup|old|orig|save|dist|tmp|temp|swp|swo)|.*~)$">
+    Require all denied
+</FilesMatch>

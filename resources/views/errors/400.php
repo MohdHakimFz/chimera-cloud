@@ -1,0 +1,1 @@
+<section class="error-page"><p class="section-label">Invalid request</p><h1>400</h1><p>The request could not be processed safely.</p><a class="button button-primary" href="<?=e(url('/'))?>">Return home</a></section>

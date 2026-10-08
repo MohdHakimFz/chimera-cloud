@@ -1,0 +1,1 @@
+<section class="error-page"><p class="section-label">Too many requests</p><h1>429</h1><p>Please wait before trying again.</p><a class="button button-primary" href="<?=e(url('/'))?>">Return home</a></section>

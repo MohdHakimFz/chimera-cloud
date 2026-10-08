@@ -1,0 +1,40 @@
+<?php
+declare(strict_types=1);
+
+$app=require dirname(__DIR__).'/bootstrap/app.php';
+use App\Services\EvaluationService;
+use App\Services\EvidenceExportService;
+use App\Services\SecurityAnalyticsService;
+
+$p=0;$f=0;$check=function(bool $ok,string $label)use(&$p,&$f):void{echo($ok?'[PASS] ':'[FAIL] ').$label.PHP_EOL;$ok?$p++:$f++;};
+$root=dirname(__DIR__);$service=file_get_contents($root.'/app/Services/SecurityAnalyticsService.php');$export=file_get_contents($root.'/app/Services/EvidenceExportService.php');$routes=file_get_contents($root.'/routes/web.php');
+$check(EvaluationService::secondsBetween('2030-01-01 10:00:00','2030-01-01 10:00:00')===0,'Same-event detection latency is zero');
+$check(EvaluationService::secondsBetween('2030-01-01 10:00:00','2030-01-01 10:01:30')===90,'Duration formula returns the persisted timestamp difference');
+$check(EvaluationService::secondsBetween(null,'2030-01-01 10:01:30')===null,'Missing start evidence is N/A');
+$check(EvaluationService::secondsBetween('2030-01-01 10:01:30',null)===null,'Missing end evidence is N/A');
+$check(EvaluationService::secondsBetween('2030-01-01 10:02:00','2030-01-01 10:01:30')===null,'Negative evidence duration fails safely');
+$check(EvaluationService::median([1,3,2])===2.0&&EvaluationService::median([1,2,3,4])===2.5,'Median handles odd and even score populations');
+$check(EvaluationService::evidenceId('sec',42)==='SEC-00000042','Stable session evidence identifiers hide raw display IDs');
+$check(EvaluationService::contributorEventId('Event #81: reason')===81&&EvaluationService::contributorEventId('legacy')===null,'Contributor-to-event relation is parsed conservatively');
+foreach(['=SUM(A1:A2)','+cmd','-2+3','@IMPORTXML'] as$value)$check(str_starts_with(EvidenceExportService::neutralizeCsvCell($value),"'"),'CSV formula prefix is neutralized: '.$value[0]);
+$check(EvidenceExportService::neutralizeCsvCell('  =SUM(A1:A2)')==="'  =SUM(A1:A2)",'CSV formula protection checks first non-whitespace character');
+$check(EvidenceExportService::neutralizeCsvCell('ordinary')==='ordinary','Ordinary CSV cells remain unchanged');
+$filters=SecurityAnalyticsService::filters(['category'=>'AUTHENTICATION','severity'=>'HIGH','threat_level'=>'CRITICAL','profile'=>'MEDIUM','module'=>'CHIM-VULN-002','date_from'=>'2030-01-01','date_to'=>'2030-01-31']);
+$check($filters['errors']===[]&&$filters['category']==='AUTHENTICATION'&&$filters['module']==='CHIM-VULN-002','Allowlisted analytics filters are accepted');
+$bad=SecurityAnalyticsService::filters(['category'=>'x OR 1=1','type'=>'DROP TABLE','date_from'=>'not-a-date','profile'=>'ROOT']);
+$check(count($bad['errors'])===4&&$bad['category']===''&&$bad['type']===''&&$bad['valid']===false,'Unsupported filter values fail closed');
+$wide=SecurityAnalyticsService::filters(['date_from'=>'2020-01-01','date_to'=>'2030-01-01']);
+$check($wide['date_from']===''&&$wide['date_to']===''&&$wide['errors']!==[],'Analytics date range is bounded to 366 days');
+$check(!preg_match('/\b(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|DROP|ALTER)\b\s+(?:INTO\s+|FROM\s+|TABLE\s+)?(?:security_events|security_sessions|security_score_contributors|honeytoken_events|vulnerability_state_changes)/i',$service),'Analytics service has no evidence mutation query');
+$check(!str_contains($service,'ThreatScoringService::apply')&&!str_contains($service,'AdaptiveDeceptionService::select')&&!str_contains($service,'changeState('),'Analytics does not invoke scoring, adaptation, or lab mutation');
+$check(str_contains($service,"'CONTROLLED_LAB':'OPERATIONAL_SECURITY'")&&str_contains($service,'security_session_id'), 'Unified timeline marks LAB and operational domains separately');
+$check(str_contains($service,"'integrity_status'")&&str_contains($service,'reconstructed_score'),'Session analysis surfaces evidence-integrity status');
+$check(str_contains($service,"event_type='DECOY_ACCESSED'")&&str_contains($service,"event_type='HONEYTOKEN_TRIGGERED'"),'Latency endpoints use genuine deception interactions');
+$check(!preg_match('/(password_hash|cookie|authorization|csrf|session_identifier|token_hash|storage_name)/i',$export),'Export service does not select or name prohibited secret fields');
+$check(EvidenceExportService::generate('invalid','json',[])===null&&EvidenceExportService::generate('security_events','xml',[])===null,'Export type and format are explicitly allowlisted');
+foreach(['/security/analytics','/security/analytics/sessions/{id}','/api/security/analytics/summary','/api/security/analytics/timeline','/api/security/analytics/sessions/{id}','/api/security/analytics/lab','/api/security/analytics/export'] as$route)$check(str_contains($routes,"'{$route}'")&&preg_match("#".preg_quote($route,'#').".*RequireRole\(\['security_admin'\]\)#",$routes)===1,'Security Admin RBAC protects '.$route);
+$check(str_contains($service,'LIMIT 500')&&str_contains($service,'MAX_TIMELINE = 200')&&str_contains($service,'MAX_EXPORT = 1000'),'Queries, timelines, and exports are bounded');
+$check(str_contains($service,"LAB_MODULE_ACCESSED")&&str_contains($service,"LAB_REMEDIATED_TEST"),'Controlled-lab evidence has a separate analytics domain');
+$check(str_contains($service,'INSUFFICIENT EVIDENCE'),'Lab evaluation refuses to fabricate missing outcomes');
+$check(in_array('session_evidence',EvidenceExportService::TYPES,true)&&count(EvidenceExportService::TYPES)===7,'Evidence export types are fixed and documented in code');
+echo "\n{$p} checks passed, {$f} failed.\n";exit($f===0?0:1);
