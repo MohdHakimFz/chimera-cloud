@@ -4,6 +4,8 @@ CHIMERA CLOUD is an academic cybersecurity web application combining secure docu
 
 The live application and its isolated training clone are separate testing tracks. Production is hosted on InfinityFree shared hosting with the vulnerability lab disabled. Deliberately vulnerable SQLi, IDOR, and reflected-XSS exercises belong only in an isolated clone.
 
+**Live application:** [CHIMERA CLOUD](https://projectchimera.infinityfreeapp.com/) · [Production login](https://projectchimera.infinityfreeapp.com/login). Use only an account you are authorized to access; the repository does not contain production credentials.
+
 ## What it includes
 
 - Role-aware workspaces for USER, ADMIN, and SECURITY ADMIN.
@@ -36,31 +38,32 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/SECURITY_MODEL.md](do
 
 ## Requirements
 
+- Install MariaDB 10.6+ (or MySQL 8.0+) and start its database service before setting up CHIMERA.
 - PHP 8.1 or newer with PDO MySQL, mbstring, fileinfo, JSON, session, and hash support
-- MySQL 8.0+ or MariaDB 10.6+
-- Apache with `mod_rewrite`, or PHP's development server
+- Apache with `mod_rewrite`, or the PHP development server for local use
+- Git to clone the project; Node.js/npm only if you intend to rebuild frontend assets
 - HTTPS for any remote deployment
 
 The deployed UI uses local compiled CSS, JavaScript, and fonts; it does not depend on Tailwind's browser CDN. Node.js is needed only when rebuilding frontend assets. The PHP application itself does not require Composer.
 
 ## Installation
 
-1. Copy `.env.example` to a local `.env`; never commit that file.
-2. Create a new empty database and a database-scoped, least-privilege user.
-3. Configure `DB_*`, `APP_URL`, session settings, and an absolute private document-storage path.
-4. Import `database/schema.sql` **only into an empty disposable database**: it drops and recreates its 11 named tables. `database/seed.sql` contains known synthetic development accounts and must never be used as a production seed.
-5. For ordinary local development, point the web document root at `public/`; use the documented protected-in-webroot layout only when hosting requires it.
-6. Keep private storage outside `public/` and protect any storage physically located inside a webroot with the supplied denial policies.
+1. Install and start **MariaDB**, install PHP with the extensions above, and confirm both `mariadb` (or `mysql`) and `php` work in your terminal. XAMPP can provide PHP/Apache, but its bundled database is not automatically the separate MariaDB instance used by this project's verified Windows setup.
+2. Clone this repository, then copy `.env.example` to a local `.env`; never commit that file.
+3. Create a **new empty** `chimera` database and a database-scoped, least-privilege application user in MariaDB. Use your own unique password, not a credential from this repository.
+4. Set `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env` to match that MariaDB instance. Set `APP_URL=http://127.0.0.1:8000` for the local server. Keep `VULNERABILITY_LAB_ENABLED=false`.
+5. Import `database/schema.sql` **only into that empty disposable database**: it drops and recreates its 11 named tables. `database/seed.sql` contains known synthetic development accounts and must never be used as a production seed.
+6. Start the app with the command below and open the local URL in a browser. For Apache, point the local document root at `public/`. Keep private storage outside `public/`; use the documented protected-in-webroot layout only when hosting requires it.
 
 The verified Windows development topology uses MariaDB at `127.0.0.1:3308`, database `chimera`, and a database-scoped `chimera_app` runtime account. A separate `chimera_test` database is reserved for integration tests. These local settings are not production credentials or a lab-clone configuration.
 
 Example development command after configuring the local database:
 
 ```powershell
-php -S 127.0.0.1:8000 -t public tests/e2e_server_router.php
+php -S 127.0.0.1:8000 -t public
 ```
 
-See [docs/DATABASE.md](docs/DATABASE.md) and [docs/TESTING.md](docs/TESTING.md) before initializing a database or running tests.
+Then visit `http://127.0.0.1:8000/login`. The `tests/e2e_server_router.php` file is **only for the isolated test harness** and must not be used as a normal development server. See [docs/DATABASE.md](docs/DATABASE.md) and [docs/TESTING.md](docs/TESTING.md) before initializing a database or running tests.
 
 ## Environment configuration
 
